@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101014">
+  <title>Movie Ratings — Discover your next film</title>
+  <style>
+    :root{color-scheme:dark;--bg:#101014;--panel:#1a1a22;--muted:#a6a6b3;--accent:#e50914;--line:#30303b}
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(ellipse at 50% -15%,#3a1118 0,transparent 48%),var(--bg);color:#f7f7fb;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+    header{padding:25px 6%;border-bottom:1px solid #ffffff12;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{font-size:1.35rem;font-weight:900;letter-spacing:-.6px}.brand span{color:var(--accent)}
+    .tag{color:var(--muted);font-size:.88rem}
+    main{width:min(1120px,90%);margin:0 auto}
+    .hero{text-align:center;padding:68px 0 38px}.eyebrow{color:#ff626b;text-transform:uppercase;letter-spacing:3px;font-size:.74rem;font-weight:800}
+    h1{font-size:clamp(2.25rem,6vw,4.4rem);letter-spacing:-2px;line-height:1.06;margin:15px 0}.hero p{color:var(--muted);font-size:1.05rem;margin:0 auto 28px;max-width:600px}
+    .search-wrap{position:relative;max-width:680px;margin:auto}
+    .search-form{display:flex;gap:10px;padding:8px;background:#1b1b23;border:1px solid #393944;border-radius:16px;box-shadow:0 15px 50px #0005}
+    input{min-width:0;flex:1;background:transparent;border:0;outline:0;color:white;padding:12px;font-size:1rem}
+    input::placeholder{color:#858592}
+    button{border:0;cursor:pointer;font-weight:800;border-radius:11px;padding:13px 22px;background:var(--accent);color:#fff;font-size:.95rem;transition:transform .15s,background .15s}
+    button:hover{background:#ff2530;transform:translateY(-1px)}button:disabled{opacity:.65;cursor:wait;transform:none}
+    .suggestions{display:none;position:absolute;z-index:5;top:calc(100% + 8px);left:0;right:0;text-align:left;background:#202029;border:1px solid #393944;border-radius:12px;overflow:hidden;box-shadow:0 18px 35px #0008}
+    .suggestions.show{display:block}.suggestion{padding:12px 16px;display:flex;justify-content:space-between;gap:12px;cursor:pointer}.suggestion:hover,.suggestion:focus{background:#33333f;outline:0}.suggestion small{color:var(--muted)}
+    #status{min-height:26px;margin:18px 0;color:var(--muted);font-size:.92rem}
+    .results{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:20px;padding:10px 0 60px}
+    .movie-card{background:var(--panel);border:1px solid #ffffff10;border-radius:15px;overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s}.movie-card:hover{transform:translateY(-5px);border-color:#e5091477}
+    .movie-card img{display:block;width:100%;height:315px;object-fit:cover;background:#25252e}.movie-info{padding:15px}.movie-info h3{margin:0 0 9px;font-size:1.02rem;line-height:1.35}.meta{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:.87rem}.rating{color:#ffd166;font-weight:800}
+    .empty{grid-column:1/-1;text-align:center;padding:32px 15px;color:var(--muted)}
+    .detail{display:grid;grid-template-columns:minmax(190px,300px) 1fr;gap:30px;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:25px;margin:10px 0 60px}
+    .detail img{width:100%;border-radius:12px;max-height:450px;object-fit:cover;background:#25252e}.detail h2{font-size:clamp(1.6rem,4vw,2.5rem);margin:0 0 12px}.detail p{color:#c4c4ce;line-height:1.7}.pills{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}.pill{padding:7px 10px;border:1px solid #41414d;border-radius:99px;color:#dddde6;font-size:.82rem}.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:15px;margin-top:22px}.fact{padding:12px;background:#111117;border-radius:10px}.fact label{display:block;color:var(--muted);font-size:.76rem;margin-bottom:5px}.fact strong{font-size:.94rem}
+    footer{text-align:center;color:#777784;padding:25px;border-top:1px solid #ffffff12;font-size:.85rem}
+    @media(max-width:620px){header{padding:20px 5%}.tag{display:none}.hero{padding:48px 0 25px}.search-form{gap:4px;padding:6px}.search-form input{padding:10px 7px}.search-form button{padding:12px 14px}.results{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.movie-card img{height:235px}.movie-info{padding:11px}.detail{grid-template-columns:1fr;padding:16px;gap:18px}.detail img{max-height:400px;width:min(100%,280px);margin:auto}}
+  </style>
+</head>
+<body>
+  <header><div class="brand">MOVIE<span>RATINGS</span></div><div class="tag">Find a film worth watching</div></header>
+  <main>
+    <section class="hero">
+      <div class="eyebrow">Your movie discovery hub</div>
+      <h1>Find your next<br>favourite movie.</h1>
+      <p>Search films to explore posters, ratings, release dates, cast, plot and more.</p>
+      <div class="search-wrap">
+        <form class="search-form" id="searchForm">
+          <input id="movieInput" type="search" placeholder="Search a movie, e.g. Interstellar..." autocomplete="off" aria-label="Movie name">
+          <button id="searchButton" type="submit">Search movies</button>
+        </form>
+        <div class="suggestions" id="suggestions" role="listbox"></div>
+      </div>
+      <div id="status" aria-live="polite">Try searching for a movie title to get started.</div>
+    </section>
+    <section id="detailArea"></section>
+    <section class="results" id="movieContainer" aria-label="Movie search results">
+      <div class="empty">🎬<br><br>Your next movie night starts here.</div>
+    </section>
+  </main>
+  <footer>Movie Ratings · Movie information powered by OMDb</footer>
+  <script>
+    // OMDb API key provided for this project.
+    const API_KEY = "b856f105";
+    const API_URL = "https://www.omdbapi.com/";
+    const movieInput = document.getElementById("movieInput");
+    const movieContainer = document.getElementById("movieContainer");
+    const suggestionsBox = document.getElementById("suggestions");
+    const status = document.getElementById("status");
+    const detailArea = document.getElementById("detailArea");
+    const searchButton = document.getElementById("searchButton");
+    let debounceTimer;
+    let requestNumber = 0;
+
+    function escapeHTML(value = "") {
+      return String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+    }
+    function posterURL(value) {
+      return value && value !== "N/A" ? value : "https://placehold.co/400x600/202029/ffffff?text=No+Poster";
+    }
+    async function fetchMovie(params) {
+      const url = new URL(API_URL);
+      url.search = new URLSearchParams({...params, apikey: API_KEY}).toString();
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Network error. Please try again.");
+      return response.json();
+    }
+    function hideSuggestions() { suggestionsBox.classList.remove("show"); suggestionsBox.innerHTML = ""; }
+    function showSuggestions(movies) {
+      if (!movies.length) { hideSuggestions(); return; }
+      suggestionsBox.innerHTML = movies.slice(0, 6).map(movie => `
+        <div class="suggestion" role="option" tabindex="0" data-title="${escapeHTML(movie.Title)}">
+          <span>${escapeHTML(movie.Title)}</span><small>${escapeHTML(movie.Year || "")}</small>
+        </div>`).join("");
+      suggestionsBox.classList.add("show");
+    }
+    movieInput.addEventListener("input", () => {
+      clearTimeout(debounceTimer);
+      const query = movieInput.value.trim();
+      if (query.length < 2) { hideSuggestions(); return; }
+      debounceTimer = setTimeout(async () => {
+        const thisRequest = ++requestNumber;
+        try {
+          const data = await fetchMovie({s: query, type: "movie"});
+          if (thisRequest !== requestNumber) return;
+          const movies = data.Response === "True" ? data.Search.filter(movie => movie.Title.toLowerCase().startsWith(query.toLowerCase())) : [];
+          showSuggestions(movies);
+        } catch { hideSuggestions(); }
+      }, 350);
+    });
+    suggestionsBox.addEventListener("click", event => {
+      const item = event.target.closest(".suggestion");
+      if (!item) return;
+      movieInput.value = item.dataset.title;
+      hideSuggestions();
+      searchMovies(item.dataset.title);
+    });
+    suggestionsBox.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        const item = event.target.closest(".suggestion");
+        if (item) { event.preventDefault(); movieInput.value = item.dataset.title; hideSuggestions(); searchMovies(item.dataset.title); }
+      }
+    });
+    document.addEventListener("click", event => {
+      if (!event.target.closest(".search-wrap")) hideSuggestions();
+    });
+    document.getElementById("searchForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const query = movieInput.value.trim();
+      if (query) { hideSuggestions(); searchMovies(query); }
+    });
+
+    async function searchMovies(query) {
+      detailArea.innerHTML = "";
+      movieContainer.innerHTML = "";
+      status.textContent = "Searching for movies…";
+      searchButton.disabled = true;
+      searchButton.textContent = "Searching…";
+      try {
+        const data = await fetchMovie({s: query, type: "movie"});
+        if (data.Response !== "True" || !data.Search?.length) {
+          status.textContent = data.Error || "No movies found. Try another title.";
+          movieContainer.innerHTML = '<div class="empty">No matches found. Check the spelling or try another movie title.</div>';
+          return;
+        }
+        status.textContent = "Select a movie to view its full details.";
+        movieContainer.innerHTML = data.Search.map(movie => `
+          <article class="movie-card" tabindex="0" role="button" data-id="${escapeHTML(movie.imdbID)}" aria-label="View ${escapeHTML(movie.Title)} details">
+            <img src="${escapeHTML(posterURL(movie.Poster))}" alt="Poster for ${escapeHTML(movie.Title)}" loading="lazy">
+            <div class="movie-info"><h3>${escapeHTML(movie.Title)}</h3>
+              <div class="meta"><span>${escapeHTML(movie.Year)}</span><span>Movie</span></div>
+            </div>
+          </article>`).join("");
+      } catch (error) {
+        status.textContent = error.message || "Could not connect to the movie service.";
+        movieContainer.innerHTML = '<div class="empty">Something went wrong. Check your internet connection and try again.</div>';
+      } finally {
+        searchButton.disabled = false;
+        searchButton.textContent = "Search movies";
+      }
+    }
+    movieContainer.addEventListener("click", event => {
+      const card = event.target.closest(".movie-card");
+      if (card) loadDetails(card.dataset.id);
+    });
+    movieContainer.addEventListener("keydown", event => {
+      if ((event.key === "Enter" || event.key === " ") && event.target.matches(".movie-card")) {
+        event.preventDefault(); loadDetails(event.target.dataset.id);
+      }
+    });
+    async function loadDetails(id) {
+      detailArea.innerHTML = '<div class="empty">Loading movie details…</div>';
+      try {
+        const movie = await fetchMovie({i: id, plot: "full"});
+        if (movie.Response !== "True") throw new Error(movie.Error || "Movie details unavailable.");
+        const rating = movie.imdbRating && movie.imdbRating !== "N/A" ? "★ " + movie.imdbRating + "/10" : "Not rated";
+        detailArea.innerHTML = `
+          <article class="detail">
+            <img src="${escapeHTML(posterURL(movie.Poster))}" alt="Poster for ${escapeHTML(movie.Title)}">
+            <div>
+              <div class="eyebrow">Movie details</div>
+              <h2>${escapeHTML(movie.Title)} <span style="color:#aaa;font-weight:400">(${escapeHTML(movie.Year)})</span></h2>
+              <div class="pills"><span class="pill">${escapeHTML(movie.Rated || "Rating N/A")}</span><span class="pill">${escapeHTML(movie.Runtime || "Runtime N/A")}</span><span class="pill">${escapeHTML(movie.Genre || "Genre N/A")}</span></div>
+              <p>${escapeHTML(movie.Plot && movie.Plot !== "N/A" ? movie.Plot : "No plot summary available.")}</p>
+              <div class="facts">
+                <div class="fact"><label>IMDb Rating</label><strong class="rating">${escapeHTML(rating)}</strong></div>
+                <div class="fact"><label>Release Date</label><strong>${escapeHTML(movie.Released || movie.Year || "N/A")}</strong></div>
+                <div class="fact"><label>Director</label><strong>${escapeHTML(movie.Director || "N/A")}</strong></div>
+                <div class="fact"><label>Cast</label><strong>${escapeHTML(movie.Actors || "N/A")}</strong></div>
+                <div class="fact"><label>Language</label><strong>${escapeHTML(movie.Language || "N/A")}</strong></div>
+                <div class="fact"><label>Awards</label><strong>${escapeHTML(movie.Awards || "N/A")}</strong></div>
+                <div class="fact"><label>Box Office</label><strong>${escapeHTML(movie.BoxOffice || "N/A")}</strong></div>
+                <div class="fact"><label>Type</label><strong>${escapeHTML(movie.Type || "Movie")}</strong></div>
+              </div>
+            </div>
+          </article>`;
+        detailArea.scrollIntoView({behavior:"smooth",block:"start"});
+      } catch (error) {
+        detailArea.innerHTML = '<div class="empty">' + escapeHTML(error.message || "Could not load details.") + '</div>';
+      }
+    }
+  </script>
+</body>
+</html>
